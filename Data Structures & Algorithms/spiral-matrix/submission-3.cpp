@@ -1,0 +1,22 @@
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        vector<int> res;
+		vector<pair<int, int>> drc = {{0,1}, {1,0}, {0,-1}, {-1, 0}};
+		vector<int> steps = {(int)matrix[0].size(), (int)matrix.size()-1};
+
+		int d = 0;
+		int r = 0, c = -1;
+		while(steps[d%2]){
+			for(int i = 0; i<steps[d%2]; i++){
+				r+=drc[d].first;
+				c+=drc[d].second;
+				res.push_back(matrix[r][c]);
+			}
+			steps[d%2]-=1;
+			d = (d+1)%4;
+		}
+
+		return res;
+    }
+};
