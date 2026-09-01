@@ -1,0 +1,110 @@
+class LFUCache {
+    struct ListNode {
+        int key;
+        int val;
+        int freq;
+        ListNode* next;
+        ListNode* prev;
+        ListNode(int k, int v): key(k), val(v), freq(1), next(nullptr), prev(nullptr) {}
+    };
+
+    struct LinkedList {
+        ListNode* left;
+        ListNode* right;
+        int size;
+        LinkedList(){
+            left = new ListNode(0,0);
+            right = new ListNode(0,0);
+            left->next = right;
+            right->prev = left;
+            size = 0;
+        }
+        ~LinkedList(){
+            delete left;
+            delete right;
+        }
+        int lenght(){
+            return size;
+        }
+        void pushRight(ListNode* node){
+            ListNode* prev = right->prev;
+            node->prev = prev;
+            prev->next = node;
+            right->prev = node;
+            node->next = right;
+            size++;
+        }
+        void pop(ListNode* node){
+            ListNode* prev = node->prev;
+            ListNode* next = node->next;
+            prev->next = next;
+            next->prev = prev;
+            size--;
+        }
+        ListNode* popLeft(){
+            ListNode* node = left->next;
+            pop(node);
+            return node;
+        }
+    };
+    int capacity;
+    int lfuCount;
+    unordered_map<int, ListNode*> nodeMap;
+    unordered_map<int, LinkedList*> listMap;
+
+    void counter(ListNode* node){
+        int count = node->freq;
+        listMap[count]->pop(node);
+        if(count==lfuCount && listMap[count]->lenght()==0){
+            lfuCount++;
+        }
+        node->freq++;
+        if(!listMap.count(node->freq)){
+            listMap[node->freq] = new LinkedList();
+        }
+        listMap[node->freq]->pushRight(node);
+    }
+public:
+    LFUCache(int capacity): capacity(capacity), lfuCount(0) {}
+
+    ~LFUCache(){
+        for(auto& pair: nodeMap) delete pair.second;
+        for(auto& pair: listMap) delete pair.second;
+    }
+    
+    int get(int key) {
+        if(!nodeMap.count(key)) return -1;
+        ListNode* node = nodeMap[key];
+        counter(node);
+        return node->val;
+    }
+    
+    void put(int key, int value) {
+        if(capacity == 0) return;
+        if(nodeMap.count(key)){
+            ListNode* node = nodeMap[key];
+            node->val = value;
+            counter(node);
+            return;
+        }
+        if(nodeMap.size() == capacity){
+            ListNode* toRemove = listMap[lfuCount]->popLeft();
+            nodeMap.erase(toRemove->key);
+            delete toRemove;
+        }
+        ListNode* node = new ListNode(key, value);
+        nodeMap[key] = node;
+        if(!listMap.count(1)){
+            listMap[1] = new LinkedList();
+        }
+        listMap[1]->pushRight(node);
+        lfuCount = 1;
+    }
+};
+
+/**
+ * Your LFUCache object will be instantiated and called as such:
+ * LFUCache* obj = new LFUCache(capacity);
+ * int param_1 = obj->get(key);
+ * obj->put(key,value);
+ */
